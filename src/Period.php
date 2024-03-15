@@ -34,7 +34,7 @@ class Period implements JsonSerializable
     /**
      * @throws InvalidInterval If the instance can not be created
      */
-    private function __construct(
+    public function __construct(
         public readonly DateTimeImmutable $startDate,
         public readonly DateTimeImmutable $endDate,
         public readonly Bounds $bounds
