@@ -13,14 +13,15 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
-use function in_array;
-use function strtolower;
-use function strtoupper;
+use Iterator;
 
+/**
+ * A class to attach a roman number to the generated label.
+ *
+ * @see LabelGenerator
+ */
 final class RomanNumber implements LabelGenerator
 {
-    public const UPPER = 1;
-    public const LOWER = 2;
     private const CHARACTER_MAP = [
         'M'  => 1000, 'CM' => 900,  'D' => 500,
         'CD' => 400,   'C' => 100, 'XC' => 90,
@@ -29,57 +30,25 @@ final class RomanNumber implements LabelGenerator
         'I'  => 1,
     ];
 
-    /**
-     * @var DecimalNumber
-     */
-    private $decimalNumber;
-
-    /**
-     * @var int
-     */
-    private $case;
-
-    /**
-     * New instance.
-     */
-    public function __construct(DecimalNumber $decimalNumber, int $case = self::UPPER)
-    {
-        $this->decimalNumber = $decimalNumber;
-        $this->case = $this->filterLetterCase($case);
-    }
-
-    /**
-     * filter letter case state.
-     */
-    private function filterLetterCase(int $case): int
-    {
-        if (!in_array($case, [self::UPPER, self::LOWER], true)) {
-            return self::UPPER;
+    public function __construct(
+        public readonly DecimalNumber $decimalNumber,
+        public readonly LetterCase $letterCase
+    ) {
+        if ($this->decimalNumber->startLabel < 1) {
+            throw UnableToDrawChart::dueToInvalidLabel($this->decimalNumber->startLabel, $this);
         }
-
-        return $case;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate(int $nbLabels): \Iterator
+    public function generate(int $nbLabels): Iterator
     {
         foreach ($this->decimalNumber->generate($nbLabels) as $key => $label) {
             yield $key => $this->convert($label);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function format(string $label): string
     {
-        if (self::UPPER === $this->case) {
-            return strtoupper($label);
-        }
-
-        return strtolower($label);
+        return $this->letterCase->convert($label);
     }
 
     /**
@@ -89,83 +58,18 @@ final class RomanNumber implements LabelGenerator
      */
     private function convert(string $number): string
     {
+        $numberInt = (int) $number;
         $retVal = '';
-        while ($number > 0) {
+        while ($numberInt > 0) {
             foreach (self::CHARACTER_MAP as $roman => $int) {
-                if ($number >= $int) {
-                    $number -= $int;
+                if ($numberInt >= $int) {
+                    $numberInt -= $int;
                     $retVal .= $roman;
                     break;
                 }
             }
         }
 
-        if (self::LOWER === $this->case) {
-            return strtolower($retVal);
-        }
-
-        return $retVal;
-    }
-
-    /**
-     * Returns the starting Letter.
-     */
-    public function startingAt(): int
-    {
-        return $this->decimalNumber->startingAt();
-    }
-
-    /**
-     * Tells whether the roman letter is upper cased.
-     */
-    public function isUpper(): bool
-    {
-        return self::UPPER === $this->case;
-    }
-
-    /**
-     * Tells whether the roman letter is lower cased.
-     */
-    public function isLower(): bool
-    {
-        return self::LOWER === $this->case;
-    }
-
-    /**
-     * Return an instance with the starting Letter.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the starting Letter.
-     */
-    public function startsWith(int $int): self
-    {
-        $labelGenerator = $this->decimalNumber->startsWith($int);
-        if ($labelGenerator === $this->decimalNumber) {
-            return $this;
-        }
-
-        $clone = clone $this;
-        $clone->decimalNumber = $labelGenerator;
-
-        return $clone;
-    }
-
-    /**
-     * Return an instance with the new letter case setting.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the letter case setting.
-     */
-    public function withLetterCase(int $case): self
-    {
-        $case = $this->filterLetterCase($case);
-        if ($case === $this->case) {
-            return $this;
-        }
-
-        $clone = clone $this;
-        $clone->case = $case;
-
-        return $clone;
+        return $this->letterCase->convert($retVal);
     }
 }

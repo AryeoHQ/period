@@ -13,18 +13,16 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use TypeError;
+
 use function chr;
-use function curl_init;
 use function fopen;
 use function rewind;
 use function stream_get_contents;
 
-/**
- * @coversDefaultClass \League\Period\Chart\ConsoleOutput
- */
-final class ConsoleOutputTest extends TestCase
+final class StreamOutputTest extends TestCase
 {
     /**
      * @return resource
@@ -40,23 +38,16 @@ final class ConsoleOutputTest extends TestCase
     public function testCreateStreamWithInvalidParameter(): void
     {
         $this->expectException(TypeError::class);
-        new ConsoleOutput(__DIR__.'/data/foo.csv');
+        new StreamOutput(__DIR__.'/data/foo.csv', Terminal::Posix);
     }
 
-    public function testCreateStreamWithWrongResourceType(): void
-    {
-        $this->expectException(TypeError::class);
-        new ConsoleOutput(curl_init());
-    }
-
-    /**
-     * @dataProvider provideWritelnTexts
-     */
+    #[DataProvider('providesWritelnTextsPosix')]
     public function testWriteln(string $message, string $expected): void
     {
         $stream = $this->setStream();
-        $output = new ConsoleOutput($stream);
-        $output->writeln($message, 'blue');
+        $output = new StreamOutput($stream, Terminal::Posix);
+        $output->writeln($message, Color::Blue);
+        $output->writeln($message);
         rewind($stream);
         /** @var string $data */
         $data = stream_get_contents($stream);
@@ -64,7 +55,10 @@ final class ConsoleOutputTest extends TestCase
         self::assertStringContainsString($expected, $data);
     }
 
-    public function provideWritelnTexts(): iterable
+    /**
+     * @return iterable<string, array{message:string, expected:string}>
+     */
+    public static function providesWritelnTextsPosix(): iterable
     {
         return [
             'empty message' => [
@@ -78,16 +72,34 @@ final class ConsoleOutputTest extends TestCase
         ];
     }
 
-    public function testWritelnWithUnknownColor(): void
+    #[DataProvider('providesWritelnTextsUnknown')]
+    public function testWritelnUnknown(string $message, string $expected): void
     {
-        $message = 'foobar the quick brown fox';
         $stream = $this->setStream();
-        $output = new ConsoleOutput($stream);
-        $output->writeln($message, 'pink');
+        $output = new StreamOutput($stream, Terminal::Colorless);
+        $output->writeln($message, Color::Blue);
+        $output->writeln($message);
         rewind($stream);
         /** @var string $data */
         $data = stream_get_contents($stream);
 
-        self::assertStringContainsString($message.PHP_EOL, $data);
+        self::assertStringContainsString($expected, $data);
+    }
+
+    /**
+     * @return iterable<string, array{message:string, expected:string}>
+     */
+    public static function providesWritelnTextsUnknown(): iterable
+    {
+        return [
+            'empty message' => [
+                'message' => '',
+                'expected' => '',
+            ],
+            'simple message' => [
+                'message' => "I'm the king of the world",
+                'expected' => "I'm the king of the world".PHP_EOL,
+            ],
+        ];
     }
 }

@@ -9,17 +9,20 @@
  * file that was distributed with this source code.
  */
 
-declare(strict_types=1);
-
 namespace League\Period;
 
-/**
- * League Period Base Exception.
+/*
+ * @deprecated since version 5.2.1
+ *
+ * Presence Enum
  *
  * @package League.period
  * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @since   4.0.0
+ * @since   5.0.0
+ * @deprecated since version 5.2.0
  */
-class Exception extends \Exception
+enum InitialDatePresence
 {
+    case Excluded;
+    case Included;
 }

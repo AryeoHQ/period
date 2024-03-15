@@ -13,39 +13,31 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use Iterator;
+
+use function array_reverse;
 use function iterator_to_array;
 
+/**
+ * A class to revert the order of the generated labels.
+ *
+ * @see LabelGenerator
+ */
 final class ReverseLabel implements LabelGenerator
 {
-    /**
-     * @var LabelGenerator
-     */
-    private $labelGenerator;
-
-    /**
-     * New instance.
-     */
-    public function __construct(LabelGenerator $labelGenerator)
+    public function __construct(public readonly LabelGenerator $labelGenerator)
     {
-        $this->labelGenerator = $labelGenerator;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate(int $nbLabels): \Iterator
+    public function generate(int $nbLabels): Iterator
     {
-        $iterable = $this->labelGenerator->generate($nbLabels);
-        $data = iterator_to_array($iterable, false);
+        $data = iterator_to_array($this->labelGenerator->generate($nbLabels), false);
 
-        for (end($data); null !== ($key = key($data)); prev($data)) {
-            yield $key => current($data);
+        foreach (array_reverse($data, false) as $offset => $value) {
+            yield $offset => $value;
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function format(string $label): string
     {
         return $this->labelGenerator->format($label);

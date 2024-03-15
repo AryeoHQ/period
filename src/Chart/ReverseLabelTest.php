@@ -13,23 +13,25 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversDefaultClass \League\Period\Chart\ReverseLabel;
- */
 final class ReverseLabelTest extends TestCase
 {
     /**
-     * @dataProvider providerLetter
+     * @param array<string> $expected
      */
+    #[DataProvider('providerLetter')]
     public function testGetLabels(int $nbLabels, string $letter, array $expected): void
     {
-        $generator = new \League\Period\Chart\ReverseLabel(new \League\Period\Chart\LatinLetter($letter));
+        $generator = new ReverseLabel(new LatinLetter($letter));
         self::assertSame($expected, iterator_to_array($generator->generate($nbLabels), false));
     }
 
-    public function providerLetter(): iterable
+    /**
+     * @return iterable<string, array{nbLabels:int, letter:string, expected:array<string>}>
+     */
+    public static function providerLetter(): iterable
     {
         return [
             'empty labels' => [

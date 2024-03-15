@@ -13,87 +13,65 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversDefaultClass \League\Period\Chart\RomanNumber;
- */
 final class RomanNumberTest extends TestCase
 {
     /**
-     * @dataProvider providerLetter
+     * @param array<string> $expected
      */
-    public function testGetLabels(int $nbLabels, int $label, int $lettercase, array $expected): void
+    #[DataProvider('providerLetter')]
+    public function testGetLabels(int $nbLabels, int $label, LetterCase $lettercase, array $expected, bool $isUpper): void
     {
         $generator = new RomanNumber(new DecimalNumber($label), $lettercase);
         self::assertSame($expected, iterator_to_array($generator->generate($nbLabels), false));
+        self::assertSame($isUpper, $lettercase->isUpper());
     }
 
-    public function providerLetter(): iterable
+    /**
+     * @return iterable<string, array{nbLabels:int, label:int, lettercase:LetterCase, expected:array<string>}>
+     */
+    public static function providerLetter(): iterable
     {
         return [
             'empty labels' => [
                 'nbLabels' => 0,
                 'label' => 1,
-                'lettercase' => \League\Period\Chart\RomanNumber::UPPER,
+                'lettercase' => LetterCase::Upper,
                 'expected' => [],
+                'isUpper' => true,
             ],
             'labels starts at 3' => [
                 'nbLabels' => 1,
                 'label' => 3,
-                'lettercase' => 42,
+                'lettercase' => LetterCase::Upper,
                 'expected' => ['III'],
+                'isUpper' => true,
             ],
             'labels starts ends at 4' => [
                 'nbLabels' => 2,
                 'label' => 4,
-                'lettercase' => RomanNumber::UPPER,
-                'expected' => ['IV', 'V'],
-            ],
-            'labels starts at 0 (1)' => [
-                'nbLabels' => 1,
-                'label' => -1,
-                'lettercase' => \League\Period\Chart\RomanNumber::LOWER,
-                'expected' => ['i'],
-            ],
-            'labels starts at 0 (2)' => [
-                'nbLabels' => 1,
-                'label' => 0,
-                'lettercase' => RomanNumber::LOWER,
-                'expected' => ['i'],
+                'lettercase' => LetterCase::Lower,
+                'expected' => ['iv', 'v'],
+                'isUpper' => false,
             ],
         ];
     }
 
-    public function testStartWith(): void
+    public function testFailsToCreateRomanLabelGenerator(): void
     {
-        $generator = new RomanNumber(new DecimalNumber(42));
-        self::assertSame(42, $generator->startingAt());
-        $new = $generator->startsWith(69);
-        self::assertNotSame($new, $generator);
-        self::assertSame(69, $new->startingAt());
-        self::assertSame($generator, $generator->startsWith(42));
-        self::assertSame(1, (new DecimalNumber(-3))->startingAt());
-        self::assertSame(1, $generator->startsWith(-3)->startingAt());
-    }
+        $this->expectException(UnableToDrawChart::class);
 
-    public function testLetterCase(): void
-    {
-        $generator = new RomanNumber(new DecimalNumber(1));
-        self::assertTrue($generator->isUpper());
-        self::assertFalse($generator->isLower());
-        $new = $generator->withLetterCase(RomanNumber::LOWER);
-        self::assertFalse($new->isUpper());
-        self::assertTrue($new->isLower());
-        $alt = $new->withLetterCase(RomanNumber::LOWER);
-        self::assertSame($alt, $new);
+        new RomanNumber(new DecimalNumber(0), LetterCase::Lower);
     }
 
     public function testFormat(): void
     {
-        $generator = new RomanNumber(new \League\Period\Chart\DecimalNumber(10));
-        $newGenerator = $generator->withLetterCase(RomanNumber::LOWER);
-        self::assertSame('FOOBAR', $generator->format('fOoBaR'));
-        self::assertSame('foobar', $newGenerator->format('fOoBaR'));
+        $upperRoman = new RomanNumber(new DecimalNumber(10), LetterCase::Upper);
+        $lowerRoman = new RomanNumber(new DecimalNumber(10), LetterCase::Lower);
+
+        self::assertSame('FOOBAR', $upperRoman->format('fOoBaR'));
+        self::assertSame('foobar', $lowerRoman->format('fOoBaR'));
     }
 }

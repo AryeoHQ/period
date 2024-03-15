@@ -13,16 +13,15 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversDefaultClass \League\Period\Chart\AffixLabel;
- */
 final class AffixLabelTest extends TestCase
 {
     /**
-     * @dataProvider providerLetter
+     * @param array<string> $expected
      */
+    #[DataProvider('providerLetter')]
     public function testGetLabels(
         int $nbLabels,
         string $letter,
@@ -30,14 +29,14 @@ final class AffixLabelTest extends TestCase
         string $suffix,
         array $expected
     ): void {
-        $generator = new \League\Period\Chart\AffixLabel(new \League\Period\Chart\LatinLetter($letter), $prefix, $suffix);
-        self::assertSame($expected, iterator_to_array($generator->generate($nbLabels), false));
-
-        $generator = (new \League\Period\Chart\AffixLabel(new \League\Period\Chart\LatinLetter($letter)))->withPrefix($prefix)->withSuffix($suffix);
+        $generator = new AffixLabel(new LatinLetter($letter), $prefix, $suffix);
         self::assertSame($expected, iterator_to_array($generator->generate($nbLabels), false));
     }
 
-    public function providerLetter(): iterable
+    /**
+     * @return array<string, array{nbLabels:int, letter:string, prefix:string, suffix:string, expected:array<int, string>}>
+     */
+    public static function providerLetter(): iterable
     {
         return [
             'empty labels' => [
@@ -63,42 +62,31 @@ final class AffixLabelTest extends TestCase
             ],
             'labels starts at 0 (1)' => [
                 'nbLabels' => 1,
-                'letter' => '        ',
+                'letter' => '   A     ',
                 'prefix' => '.',
                 'suffix' => '.',
-                'expected' => ['.0.'],
-            ],
-            'labels starts at 0 (2)' => [
-                'nbLabels' => 1,
-                'letter' => '',
-                'prefix' => '.'.PHP_EOL,
-                'suffix' => PHP_EOL.'.',
-                'expected' => ['.0.'],
-            ],
-            'labels with an integer' => [
-                'nbLabels' => 1,
-                'letter' => '1',
-                'prefix' => '.'.PHP_EOL,
-                'suffix' => PHP_EOL,
-                'expected' => ['.A'],
+                'expected' => ['.A.'],
             ],
         ];
     }
 
+    public function testFailsToInstantiateNewInstanceWithCarriageReturnCharacter(): void
+    {
+        $this->expectException(UnableToDrawChart::class);
+
+        new AffixLabel(labelGenerator: new LatinLetter('foobar'), labelPrefix: 'toto', labelSuffix: 'toto'.PHP_EOL);
+    }
+
     public function testGetter(): void
     {
-        $generator = new \League\Period\Chart\AffixLabel(new RomanNumber(new DecimalNumber(10)));
-        self::assertSame('', $generator->suffix());
-        self::assertSame('', $generator->prefix());
-        $new = $generator->withPrefix('o')->withSuffix('');
-        self::assertNotSame($new, $generator);
-        self::assertSame('o', $new->prefix());
-        self::assertSame('', $new->suffix());
+        $generator = new AffixLabel(new RomanNumber(new DecimalNumber(10), LetterCase::Upper));
+        self::assertSame('', $generator->labelSuffix);
+        self::assertSame('', $generator->labelPrefix);
     }
 
     public function testFormat(): void
     {
-        $generator = new \League\Period\Chart\AffixLabel(new \League\Period\Chart\RomanNumber(new DecimalNumber(10)), ':', '.');
+        $generator = new AffixLabel(new RomanNumber(new DecimalNumber(10), LetterCase::Upper), ':', '.');
         self::assertSame(':FOOBAR.', $generator->format('foobar'));
     }
 }

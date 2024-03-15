@@ -13,109 +13,47 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
-use function preg_replace;
+use Iterator;
 
+use function preg_match;
+
+/**
+ * A class to attach a prefix and/or a suffix string to the generated label.
+ *
+ * @see LabelGenerator
+ */
 final class AffixLabel implements LabelGenerator
 {
-    /**
-     * @var LabelGenerator
-     */
-    private $labelGenerator;
-
-    /**
-     * @var string
-     */
-    private $prefix = '';
-
-    /**
-     * @var string
-     */
-    private $suffix = '';
-
-    /**
-     * New instance.
-     */
-    public function __construct(LabelGenerator $labelGenerator, string $prefix = '', string $suffix = '')
-    {
-        $this->labelGenerator = $labelGenerator;
-        $this->prefix = $this->filterString($prefix);
-        $this->suffix = $this->filterString($suffix);
+    public function __construct(
+        public readonly LabelGenerator $labelGenerator,
+        public readonly string $labelPrefix = '',
+        public readonly string $labelSuffix = ''
+    ) {
+        $this->filterAffix($this->labelPrefix);
+        $this->filterAffix($this->labelSuffix);
     }
 
-    private function filterString(string $str): string
+    private function filterAffix(string $str): void
     {
-        return (string) preg_replace("/[\r\n]/", '', $str);
+        if (1 === preg_match("/[\r\n]/", $str)) {
+            throw UnableToDrawChart::dueToInvalidLabel($str, $this);
+        }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate(int $nbLabels): \Iterator
+    public function generate(int $nbLabels): Iterator
     {
         foreach ($this->labelGenerator->generate($nbLabels) as $key => $label) {
-            yield $key => $this->prefix.$label.$this->suffix;
+            yield $key => $this->decorate($label);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function format(string $label): string
     {
-        return $this->prefix.$this->labelGenerator->format($label).$this->suffix;
+        return $this->decorate($this->labelGenerator->format($label));
     }
 
-    /**
-     * Returns the suffix.
-     */
-    public function suffix(): string
+    private function decorate(string $string): string
     {
-        return $this->suffix;
-    }
-
-    /**
-     * Returns the prefix.
-     */
-    public function prefix(): string
-    {
-        return $this->prefix;
-    }
-
-    /**
-     * Return an instance with the suffix.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the suffix.
-     */
-    public function withSuffix(string $suffix): self
-    {
-        $suffix = $this->filterString($suffix);
-        if ($suffix === $this->suffix) {
-            return $this;
-        }
-
-        $clone = clone $this;
-        $clone->suffix = $suffix;
-
-        return $clone;
-    }
-
-    /**
-     * Return an instance with the prefix.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the prefix.
-     */
-    public function withPrefix(string $prefix): self
-    {
-        $prefix = $this->filterString($prefix);
-        if ($prefix === $this->prefix) {
-            return $this;
-        }
-
-        $clone = clone $this;
-        $clone->prefix = $prefix;
-
-        return $clone;
+        return $this->labelPrefix.$string.$this->labelSuffix;
     }
 }

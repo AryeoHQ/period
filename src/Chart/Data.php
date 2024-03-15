@@ -13,10 +13,17 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use Countable;
+use Iterator;
+use IteratorAggregate;
+use JsonSerializable;
 use League\Period\Period;
 use League\Period\Sequence;
 
-interface Data extends \Countable, \IteratorAggregate, \JsonSerializable
+/**
+ * @extends IteratorAggregate<array-key, array{0:array-key, 1:Sequence}>
+ */
+interface Data extends Countable, IteratorAggregate, JsonSerializable
 {
     /**
      * Returns the number of pairs.
@@ -26,12 +33,12 @@ interface Data extends \Countable, \IteratorAggregate, \JsonSerializable
     /**
      * Returns the pairs.
      *
-     * @return \Iterator<int, array{0: string, 1: Sequence}>
+     * @return Iterator<int, array{0: int|string, 1: Sequence}>
      */
-    public function getIterator(): \Iterator;
+    public function getIterator(): Iterator;
 
     /**
-     * @var array<int, array{label:string, item:Sequence}>.
+     * @return array<array{label:string|int, item:Sequence}>
      */
     public function jsonSerialize(): array;
 
@@ -41,19 +48,23 @@ interface Data extends \Countable, \IteratorAggregate, \JsonSerializable
     public function isEmpty(): bool;
 
     /**
-     * @return string[]
+     * Returns the labels associated to all items.
+     *
+     * @return array<string|int>
      */
     public function labels(): iterable;
 
     /**
-     * @return Sequence[]
+     * Returns all items as a collection of Sequences.
+     *
+     * @return array<Sequence>
      */
     public function items(): iterable;
 
     /**
-     * Returns the dataset boundaries.
+     * Returns the dataset length.
      */
-    public function boundaries(): ?Period;
+    public function length(): Period|null;
 
     /**
      * Returns the label maximum length.
@@ -62,16 +73,13 @@ interface Data extends \Countable, \IteratorAggregate, \JsonSerializable
 
     /**
      * Add a new pair to the collection.
-     *
-     * @param object|string   $label a scalar or a stringable object (implementing __toString method).
-     * @param Period|Sequence $item
-     *
-     * @throws \TypeError If the label or the item type are not supported.
      */
-    public function append($label, $item): void;
+    public function append(string|int $label, Period|Sequence $item): self;
 
     /**
      * Add a collection of pairs to the collection.
+     *
+     * @param iterable<array{0:string|int, 1:Period|Sequence}> $pairs
      */
-    public function appendAll(iterable $pairs): void;
+    public function appendAll(iterable $pairs): self;
 }

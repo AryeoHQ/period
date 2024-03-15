@@ -9,8 +9,10 @@
  * file that was distributed with this source code.
  */
 
-declare(strict_types=1);
+namespace League\Period\Chart;
 
-if (!function_exists('\Period\duration')) {
-    require __DIR__.'/functions.php';
+enum Terminal
+{
+    case Posix;
+    case Colorless;
 }

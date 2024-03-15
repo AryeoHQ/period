@@ -13,80 +13,38 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use Iterator;
+
+/**
+ * A class to attach a decimal number to the generated label.
+ *
+ * @see LabelGenerator
+ */
 final class DecimalNumber implements LabelGenerator
 {
-    /**
-     * @var int
-     */
-    private $int;
-
-    /**
-     * New instance.
-     */
-    public function __construct(int $int = 1)
+    public function __construct(public readonly int $startLabel)
     {
-        if (0 >= $int) {
-            $int = 1;
-        }
-
-        $this->int = $int;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate(int $nbLabels): \Iterator
+    public function format(string $label): string
+    {
+        return $label;
+    }
+
+    public function generate(int $nbLabels): Iterator
     {
         if (0 >= $nbLabels) {
             return;
         }
 
         $count = 0;
-        $end = $this->int + $nbLabels;
-        $value = $this->int;
-        while ($value < $end) {
-            yield $count => $this->format((string) $value);
+        $end = $this->startLabel + $nbLabels;
+        $label = $this->startLabel;
+        while ($label < $end) {
+            yield $count => $this->format((string) $label);
 
             ++$count;
-            ++$value;
+            ++$label;
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function format(string $label): string
-    {
-        return $label;
-    }
-
-    /**
-     * Returns the starting Letter.
-     */
-    public function startingAt(): int
-    {
-        return $this->int;
-    }
-
-    /**
-     * Return an instance with the starting Letter.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the starting Letter.
-     */
-    public function startsWith(int $int): self
-    {
-        if (0 >= $int) {
-            $int = 1;
-        }
-
-        if ($int === $this->int) {
-            return $this;
-        }
-
-        $clone = clone $this;
-        $clone->int = $int;
-
-        return $clone;
     }
 }

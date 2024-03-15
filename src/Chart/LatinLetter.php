@@ -13,88 +13,96 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use Iterator;
+
+use function array_pop;
+use function chr;
+use function implode;
 use function preg_match;
+use function str_split;
 use function trim;
 
+/**
+ * A class to attach a latin letter to the generated label.
+ *
+ * @see LabelGenerator
+ */
 final class LatinLetter implements LabelGenerator
 {
-    /**
-     * @var string
-     */
-    private $str;
+    public readonly string $startLabel;
 
-    /**
-     * New instance.
-     */
-    public function __construct(string $str = 'A')
+    public function __construct(string $startLabel)
     {
-        $this->str = $this->filterLetter($str);
+        $this->startLabel = $this->filterLabel($startLabel);
     }
 
-    public function filterLetter(string $str): string
+    private function filterLabel(string $str): string
     {
-        $str = trim($str);
-        if ('' === $str) {
-            return '0';
-        }
+        $label = trim($str);
 
-        if (1 !== preg_match('/^[A-Za-z]+$/', $str)) {
-            return 'A';
-        }
-
-        return $str;
+        return match (1) {
+            preg_match('/^[A-Za-z]+$/', $label) => $label,
+            default => throw UnableToDrawChart::dueToInvalidLabel($str, $this),
+        };
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function format(string $label): string
     {
         return $label;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate(int $nbLabels): \Iterator
+    public function generate(int $nbLabels): Iterator
     {
         if (0 >= $nbLabels) {
             $nbLabels = 0;
         }
 
         $count = 0;
-        $letter = $this->str;
+        $label = $this->startLabel;
         while ($count < $nbLabels) {
-            yield $count => $letter++;
+            yield $count => $label;
+
+            $label = self::increment($label);
 
             ++$count;
         }
     }
 
     /**
-     * Returns the starting Letter.
-     */
-    public function startingAt(): string
-    {
-        return $this->str;
-    }
-
-    /**
-     * Return an instance with the starting Letter.
+     * Increments ASCII Letters like numbers in PHP.
      *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the starting Letter.
+     * @see https://stackoverflow.com/questions/3567180/how-to-increment-letters-like-numbers-in-php/3567218
      */
-    public function startsWith(string $str): self
+    private static function increment(string $current): string
     {
-        $str = $this->filterLetter($str);
-        if ($str === $this->str) {
-            return $this;
+        static $asciiUpperCaseBounds = ['start' => 65, 'end' => 91];
+        static $asciiLowerCaseBounds = ['start' => 97, 'end' => 123];
+
+        $increase = true;
+        $letters = str_split($current);
+        $nextLetters = [];
+
+        while ([] !== $letters) {
+            $nextLetter = array_pop($letters);
+
+            if ($increase) {
+                $letterAscii = ord($nextLetter) + 1;
+
+                [$nextLetterAscii, $increase] = match ($letterAscii) {
+                    $asciiUpperCaseBounds['end'] => [$asciiUpperCaseBounds['start'], true],
+                    $asciiLowerCaseBounds['end'] => [$asciiLowerCaseBounds['start'], true],
+                    default => [$letterAscii, false],
+                };
+
+                $nextLetter = chr($nextLetterAscii);
+                if ($increase && [] === $letters) {
+                    $nextLetter .= $nextLetter;
+                }
+            }
+
+            $nextLetters = [$nextLetter, ...$nextLetters];
         }
 
-        $clone = clone $this;
-        $clone->str = $str;
-
-        return $clone;
+        return implode('', $nextLetters);
     }
 }

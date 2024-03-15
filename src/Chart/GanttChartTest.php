@@ -13,33 +13,27 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use DateTime;
+use DateTimeImmutable;
 use League\Period\Period;
 use League\Period\Sequence;
 use PHPUnit\Framework\TestCase;
+
 use function fopen;
 use function rewind;
 use function stream_get_contents;
 
-/**
- * @coversDefaultClass \League\Period\Chart\GanttChart
- */
 final class GanttChartTest extends TestCase
 {
-    /**
-     * @var \League\Period\Chart\GanttChart
-     */
-    private $graph;
+    private GanttChart $graph;
 
-    /**
-     * @var resource
-     */
+    /** @var resource */
     private $stream;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->stream = $this->setStream();
-        $config = (new GanttChartConfig(new \League\Period\Chart\ConsoleOutput($this->stream)))->withColors('red');
-        $this->graph = new GanttChart($config);
+        $this->graph = new GanttChart(new GanttChartConfig(output: new StreamOutput($this->stream, Terminal::Posix), colors: [Color::Red]));
     }
 
     /**
@@ -53,39 +47,20 @@ final class GanttChartTest extends TestCase
         return $stream;
     }
 
-    /**
-     * @covers ::__construct
-     */
-    public function testConstructor(): void
-    {
-        $graph = new GanttChart();
-        self::assertNotEquals($this->graph, $graph);
-    }
-
-    /**
-     * @covers ::stroke
-     * @covers ::setChartScale
-     */
     public function testDisplayEmptyDataset(): void
     {
-        $this->graph->stroke(new \League\Period\Chart\Dataset());
+        $this->graph->stroke(new Dataset());
         rewind($this->stream);
         $data = stream_get_contents($this->stream);
 
         self::assertSame('', $data);
     }
 
-    /**
-     * @covers ::stroke
-     * @covers ::setChartScale
-     * @covers ::drawDataPortion
-     * @covers \League\Period\Chart\ConsoleOutput
-     */
     public function testDisplayPeriods(): void
     {
-        $this->graph->stroke(new \League\Period\Chart\Dataset([
-            ['A', new Period('2018-01-01', '2018-01-15')],
-            ['B', new Period('2018-01-15', '2018-02-01')],
+        $this->graph->stroke(new Dataset([
+            ['A', Period::fromDate(new DateTime('2018-01-01'), new DateTime('2018-01-15'))],
+            ['B', Period::fromDate(new DateTime('2018-01-15'), new DateTime('2018-02-01'))],
         ]));
 
         rewind($this->stream);
@@ -96,16 +71,11 @@ final class GanttChartTest extends TestCase
         self::assertStringContainsString('B                            [-------------------------------)', $data);
     }
 
-    /**
-     * @covers ::stroke
-     * @covers ::setChartScale
-     * @covers ::drawDataPortion
-     */
     public function testDisplaySequence(): void
     {
-        $dataset = new \League\Period\Chart\Dataset([
-            ['A', new Sequence(new Period('2018-01-01', '2018-01-15'))],
-            ['B', new Sequence(new Period('2018-01-15', '2018-02-01'))],
+        $dataset = new Dataset([
+            ['A', new Sequence(Period::fromDate(new DateTimeImmutable('2018-01-01'), new DateTimeImmutable('2018-01-15')))],
+            ['B', new Sequence(Period::fromDate(new DateTimeImmutable('2018-01-15'), new DateTimeImmutable('2018-02-01')))],
         ]);
 
         $this->graph->stroke($dataset);
@@ -118,11 +88,6 @@ final class GanttChartTest extends TestCase
         self::assertStringContainsString('B                            [-------------------------------)', $data);
     }
 
-    /**
-     * @covers ::stroke
-     * @covers ::setChartScale
-     * @covers ::drawDataPortion
-     */
     public function testDisplayEmptySequence(): void
     {
         $dataset = new Dataset();
@@ -136,5 +101,12 @@ final class GanttChartTest extends TestCase
 
         self::assertStringContainsString('sequenceA                                  ', $data);
         self::assertStringContainsString('sequenceB                                  ', $data);
+    }
+
+    public function testConstructor(): void
+    {
+        $graph = new GanttChart(new GanttChartConfig(new StreamOutput(STDOUT, Terminal::Posix)));
+
+        self::assertSame([Color::Reset], $graph->config->colors);
     }
 }

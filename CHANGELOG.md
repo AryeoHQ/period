@@ -2,15 +2,15 @@
 
 All notable changes to `Period` will be documented in this file
 
-## Next - TBD
+## [5.3.1](https://github.com/thephpleague/period/compare/5.3.0...5.3.1) - 2023-12-06
 
 ### Added
 
-- Nothing
+- None
 
 ### Fixed
 
-- None
+- Fix Period duplication during intersection calculation [#135](https://github.com/thephpleague/period/issues/135) by [maogou](https://github.com/maogou)
 
 ### Deprecated
 
@@ -20,7 +20,263 @@ All notable changes to `Period` will be documented in this file
 
 - None
 
-## 4.11.0 - 2020-11-11
+## [5.3.0](https://github.com/thephpleague/period/compare/5.2.1...5.3.0) - 2023-11-28
+
+### Added
+
+- `Chart\LetterCase::convert`
+
+### Fixed
+
+- Handles gracefully new Date exception in PHP8.3
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+## [5.2.1] - 2023-02-25
+
+### Added
+
+- None
+
+### Fixed
+
+- `Period::fromRange` should work in PHP8.1 with DatePeriod limitations.
+
+### Deprecated
+
+- `InitialDatePresence` use instead `Period::fromRange`
+
+### Removed
+
+- None
+
+## [5.2.0] - 2023-02-18
+
+### Added
+
+- `Period::rangeForward` allows iteration over a set of dates and times, recurring at regular intervals, over the instance forward starting from the instance start.
+- `Period::rangeBackwards` Allows iteration over a set of dates and times, recurring at regular intervals, over the instance backwards starting from the instance ending.
+- `Period::fromRange` returns a new `Period` instance from a `DatePeriod` object. Only usable in PHP8.2+ installation
+
+### Fixed
+
+- Using PHPUnit 10 instead of PHPUnit 9.
+
+### Deprecated
+
+- `Period::dateRangeForward` use instead `Period::rangeForward`
+- `Period::dateRangeBackwards` use instead `Period::rangeBackwards`
+
+### Removed
+
+- None
+
+## [5.1.0] - 2022-06-28
+
+
+### Added
+
+- `DatePoint::fromFormat` to instantiate from a date format and its related string. 
+
+### Fixed
+
+- `Period::fromIso8601` now supports truncated date and duration in the interval string.
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+## [5.0.0] - 2022-02-22
+
+### Added
+
+- `IntervalError` used as the error interface marker.
+- `InvalidInterval` exception for anything regarding creating an object.
+- `Duration::fromSeconds` uses a dedicated fraction parameter and the seconds are no longer expressed using a `float` value.
+- `Period::fromTimestamp` to instantiate a time range object from two timestamps.
+- `Period::fromIso80000` to instantiate a time range object from a mathematical representation and a date format.
+- `Period::fromBourbaki` to instantiate a time range object from a mathematical representation and a date format.
+- `Period` duration comparison methods accepts also `Duration` and `DateInterval` in addition to `Period` objects.
+- `Period::union`
+- `Period::snapTo*` methods to ease period expansion.
+- `Period::meets`
+- `Period::meetsOnStart`
+- `Period::meetsOnEnd`
+- `Period::toBourbaki`
+- `Period::toIso80000`
+- `Period::toBourbaki`
+- `Bounds` Enumeration.
+- `InitialDatePresence` Enumeration.
+- `Sequence::toList`
+- `Chart\LetterCase` Enumeration.
+- `Chart\Alignment` Enumeration.
+- `Chart\StreamOutput` class to replace `Chart\ConsoleOutput` class.
+- `Chart\Terminal` Enumeration.
+- `Chart\ChartError` used as the chart error interface marker.
+- `Chart\UnableToDrawChart` exception for anything regarding drawing a chart out of `Period` and/or `Sequence` objects.
+
+### Fixed
+
+- Switch from using `Closure` object instead of the `callable` pseudo type with the `Sequence` methods.
+- `Period::diff` returns a `Sequence` instance instead of an array.
+- `Period::__construct` is private.
+- `Period` named constructors, all parameters are required except for the boundaries.
+- `Period::timeDuration` now returns an `int` instead of a `float` value.  
+- `Period::intersect` now can take multiple `Period` instances as parameters.
+- `Period::subtract` now can take multiple `Period` instances as parameters.
+- `Duration` no longer extends a `DateInterval` object.
+- `Duration::fromIsoString` supports 3 versions of dealing with fractions with ISO valid string.
+- `Datepoint` class renamed `DatePoint`.
+- `DatePoint` no longer extends a `DateTimeImmutable` object.
+- Argument names are normalized throughout the package. (PHP8 BC break)
+- `Chart\LatinLetter` in case of wrong value will fall back to `A` instead of `0` which is not a letter.
+- `Chart\LatinLetter` the starting label must be explicit on instantiation.
+- `Chart\RomanNumber` requires its two arguments to be explicitly set.
+
+### Deprecated
+
+- None
+
+### Removed
+
+- Support for PHP7 and PHP8.0
+- `Period::fromDatepoint` replaced by `Period::fromDate`
+- `Period::getStartDate` replaced by accessing readonly property `Period::startDate`
+- `Period::getEndDate` replaced by accessing readonly property `Period::endDate`
+- `Period::getBoundaryType` replaced by accessing readonly property `Period::bounds`
+- `Period::getDateInterval` replaced by `Period::dateInterval`
+- `Period::getTimestampInterval` replaced by `Period::timeDuration`
+- `Period::withBoundaryType` replaced by `Period::boundedBy`
+- `Period::isStartIncluded` with no replacement use `Bounds::isStartIncluded`
+- `Period::isStartExcluded` with no replacement use `Bounds::isStartIncluded` instead
+- `Period::isEndIncluded` with no replacement use  `Bounds::isEndIncluded`
+- `Period::isEndExcluded` with no replacement use `Bounds::isEndIncluded` instead
+- `Period::fromDatePeriod` replaced by `Period::fromDateRange`
+- `Period::getDatePeriod` replaced by `Period::dateRange`
+- `Period::getDatePeriodBackwards` replaced by `Period::dateRangeBackwards`
+- `Period::__string` replaced by `Period::toIso8601`
+- `Period::format` replaced by `Period::toIso80000`
+- `Period::split` replaced by `Period::splitForward`
+- `Period::substract` use `Period::subtract` instead
+- `Sequence::substract` use `Sequence::subtract` instead
+- `Sequence::getIntersections` use `Sequence::intersections` instead
+- `Sequence::getGaps` use `Sequence::gaps` instead
+- `Sequence::getBoundaries` use `Sequence::length` instead
+- `Sequence::getTotalTimestampInterval` use `Sequence::totalTimeDuration` instead  
+- `Sequence::toArray` use `Sequence::toList` instead
+- `Duration::__toString` and `Duration::format` with no replacement
+- `Duration::create` is removed with no replacement
+- `Datepoint::create` is removed with no replacement
+- The `create` prefix is removed from the `Duration` and `Datepoint` named constructors.
+- All charts related classes have their properties exposed as public readonly. All their getters are removed except if they are part of an interface.
+- `Chart\ConsoleOutput` replaced by `Chart\StreamOutput` class.
+- `Chart\RomanNumber::isLower` use `Chart\LetterCase::isUpper` instead.
+- `Chart\RomanNumber::startingAt` use `Chart\DecimalNumber::startLabel` public readonly property
+- `Chart\RomanNumber::startsWith` is removed with no replacement
+- `Chart\RomanNumber::withLetterCase` is removed with no replacement
+- `Chart\DecimalNumber::startsWith` is removed with no replacement
+- `Chart\LatinNumber::startsWith` is removed with no replacement
+- `Chart\LatinNumber::startingAt` use `Chart\LatinNumber::startLabel` public readonly property
+- `Chart\AffixLabel::withPrefix` is removed with no replacement
+- `Chart\AffixLabel::withSuffix` is removed with no replacement
+- `Chart\AffixLabel::prefix` method use `Chart\AffixLabel::labelPrefix` public readonly property
+- `Chart\AffixLabel::suffix` method use `Chart\AffixLabel::labelSuffix` public readonly property
+
+Removed all the following namespaced functions from the package: 
+
+- `League\Period\datepoint`
+- `League\Period\duration`
+- `League\Period\year`
+- `League\Period\semester`
+- `League\Period\quarter`
+- `League\Period\month`
+- `League\Period\day`
+- `League\Period\hour`
+- `League\Period\minute`
+- `League\Period\second`
+- `League\Period\instant`
+- `League\Period\iso_year`
+- `League\Period\iso_week`
+- `League\Period\interval_after`
+- `League\Period\interval_before`
+- `League\Period\interval_around`
+- `League\Period\interval_from_dateperiod`
+
+## [4.12.0] - 2022-02-21
+
+### Added
+
+- `Datepoint::second`
+- `Datepoint::minute`
+- `Datepoint::hour`
+- `Datepoint::isoWeek`
+- `Datepoint::month`
+- `Datepoint::quarter`
+- `Datepoint::semester`
+- `Datepoint::year`
+- `Datepoint::isoYear`
+- `Duration::fromDateInterval`
+- `Duration::fromSeconds`
+- `Duration::fromChronoString`
+- `Duration::fromTimeString`
+- `Duration::fromDateString`
+- `Period::timeDuration`
+- `Period::dateInterval`
+- `Period::dateRangeForward`
+- `Period::dateRangeBackwards`
+- `Period::toIso80000`
+- `Period::splitForward`
+- `Period::timeDurationDiff`
+- `Period::boundedBy`
+- `Sequence::length`
+- `Sequence::totalTimeDuration`
+
+### Fixed
+
+- None
+
+### Deprecated
+
+- `Datepoint::getSecond` is deprecated in favor of `Datepoint::second`
+- `Datepoint::getMinute` is deprecated in favor of `Datepoint::minute`
+- `Datepoint::getHour` is deprecated in favor of `Datepoint::hour`
+- `Datepoint::getIsoWeek` is deprecated in favor of `Datepoint::isoWeek`
+- `Datepoint::getMonth`  is deprecated in favor of `Datepoint::month`
+- `Datepoint::getQuarter` is deprecated in favor of `Datepoint::quarter`
+- `Datepoint::getSemester` is deprecated in favor of `Datepoint::semester`
+- `Datepoint::getYear` is deprecated in favor of `Datepoint::year`
+- `Datepoint::getIsoYear` is deprecated in favor of `Datepoint::isoYear`
+- `Duration::createfromDateInterval` is deprecated in favor of `Datepoint::fromDateInterval`
+- `Duration::createfromSeconds` is deprecated in favor of `Datepoint::fromSeconds`
+- `Duration::createfromChronoString` is deprecated in favor of `Datepoint::fromChronoString`
+- `Duration::createfromTimeString` is deprecated in favor of `Datepoint::fromTimeString`
+- `Duration::createfromDateString` is deprecated in favor of `Datepoint::fromDateString`
+- `Period::getTimestampInterval` is deprecated in favor of `Period::timeDuration`
+- `Period::getDateInterval` is deprecated in favor of `Period::dateInterval`
+- `Period::getDatePeriod` is deprecated in favor of `Period::dateRangeForward`
+- `Period::getDatePeriodBackwards` is deprecated in favor of `Period::dateRangeBackwards`
+- `Period::format` is deprecated in favor of `Period::toIso80000`
+- `Period::split` is deprecated in favor of `Period::splitForward`
+- `Period::withBoundaryType` is deprecated in favor of `Period::boundedBy`
+- `Period::timestampIntervalDiff` is deprecated in favor of `Period::timeDurationDiff`
+- `Sequence::boundaries` is deprecated in favor of `Sequence::length`
+- `Sequence::getTotalTimestampInterval` is deprecated in favor of `Sequence::totalTimeDuration`
+
+### Removed
+
+- None
+
+## [4.11.0] - 2020-11-11
 
 ### Added
 
@@ -44,7 +300,7 @@ All notable changes to `Period` will be documented in this file
 
 - None
 
-## 4.10.0 - 2020-03-22
+## [4.10.0] - 2020-03-22
 
 ### Added
 
@@ -63,7 +319,7 @@ All notable changes to `Period` will be documented in this file
 
 - Support for PHP7.1
 
-## 4.9.0 - 2019-09-02
+## [4.9.0] - 2019-09-02
 
 ### Added
 
@@ -92,7 +348,7 @@ All notable changes to `Period` will be documented in this file
 
 - None
 
-## 4.8.1 - 2019-07-16
+## [4.8.1] - 2019-07-16
 
 ### Added
 
@@ -110,7 +366,7 @@ All notable changes to `Period` will be documented in this file
 
 - None
 
-## 4.8.0 - 2019-06-20
+## [4.8.0] - 2019-06-20
 
 ### Added
 
@@ -133,7 +389,7 @@ All notable changes to `Period` will be documented in this file
 
 - None
 
-## 4.7.1 - 2019-05-19
+## [4.7.1] - 2019-05-19
 
 ### Added
 
@@ -153,7 +409,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.7.0 - 2019-03-31
+## [4.7.0] - 2019-03-31
 
 ### Added
 
@@ -175,7 +431,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.6.0 - 2019-03-06
+## [4.6.0] - 2019-03-06
 
 ### Added
 
@@ -194,7 +450,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.5.0 - 2019-02-03
+## [4.5.0] - 2019-02-03
 
 ### Added
 
@@ -221,7 +477,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.4.0 - 2019-01-20
+## [4.4.0] - 2019-01-20
 
 ### Added
 
@@ -268,7 +524,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.3.1 - 2019-01-07
+## [4.3.1] - 2019-01-07
 
 ### Added
 
@@ -286,7 +542,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.3.0 - 2018-12-21
+## [4.3.0] - 2018-12-21
 
 ### Added
 
@@ -304,7 +560,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.2.0 - 2018-12-19
+## [4.2.0] - 2018-12-19
 
 ### Added
 
@@ -351,7 +607,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.1.0 - 2018-12-07
+## [4.1.0] - 2018-12-07
 
 ### Added
 
@@ -370,7 +626,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.0.1 - 2018-11-30
+## [4.0.1] - 2018-11-30
 
 ### Added
 
@@ -388,7 +644,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 4.0.0 - 2018-10-18
+## [4.0.0] - 2018-10-18
 
 ### Added
 
@@ -456,7 +712,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 - `Period::compareDuration` replaced by `Period::durationCompare`
 - `Period::withDuration` replaced by `Period::withDurationAfterStart`
 
-## 3.4.0 - 2017-11-17
+## [3.4.0] - 2017-11-17
 
 ### Added
 
@@ -475,7 +731,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 3.3.0 - 2016-09-19
+## [3.3.0] - 2016-09-19
 
 ### Added
 
@@ -496,7 +752,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 3.2.0 - 2016-05-09
+## [3.2.0] - 2016-05-09
 
 ### Added
 
@@ -516,7 +772,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 3.1.1 - 2016-02-10
+## [3.1.1] - 2016-02-10
 
 ### Added
 
@@ -535,7 +791,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 3.1.0 - 2016-02-01
+## [3.1.0] - 2016-02-01
 
 ### Added
 
@@ -555,7 +811,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 3.0.1 - 2015-12-21
+## [3.0.1] - 2015-12-21
 
 ### Added
 
@@ -573,7 +829,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 
 - None
 
-## 3.0.0 - 2015-09-02
+## [3.0.0] - 2015-09-02
 
 ### Added
 
@@ -599,13 +855,13 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 - `Period::duration`
 - `Period::durationDiff`
 
-## 2.5.1 - 2015-03-06
+## [2.5.1] - 2015-03-06
 
 ### Fixed
 
 - `Period` always returns `DateTime` objects even when given `DateTimeImmutable` objects.
 
-## 2.5.0 - 2015-03-06
+## [2.5.0] - 2015-03-06
 
 ### Added
 
@@ -631,7 +887,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 ### Remove
 - support for PHP 5.3
 
-## 2.4.0 - 2014-12-18
+## [2.4.0] - 2014-12-18
 
 ### Added
 - Modifying methods:
@@ -640,7 +896,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 ### Fixed
 - Added support for `DateTimeInterface` interface
 
-## 2.3.0 - 2014-12-15
+## [2.3.0] - 2014-12-15
 
 ### Added
 - Named constructor:
@@ -649,7 +905,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 ### Fixed
 - `Period::isBefore` `Period::isAfter` bug fixed. must take into account the *half-open* implementation of a `Period`object.
 
-## 2.2.0 - 2014-12-12
+## [2.2.0] - 2014-12-12
 
 ### Added
 - Modifying methods:
@@ -662,7 +918,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 ### Fixed
 - `Period::overlaps` bug fixed [issue #8](https://github.com/thephpleague/period/issues/8)
 
-## 2.1.0 - 2014-12-08
+## [2.1.0] - 2014-12-08
 
 ### Added
 - Modifying methods:
@@ -670,7 +926,7 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
     - `Period::previous`
 - `Period::__toString` using ISO8601 representation
 
-## 2.0.0 - 2014-10-15
+## [2.0.0] - 2014-10-15
 
 ### Added
 - Change vendor namespace from `Period` to `League\Period`
@@ -691,11 +947,77 @@ bug fix](https://bugs.php.net/bug.php?id=50020)
 - `Period::getDuration` accept an optional parameter `$get_as_seconds` if used and set to `true`, the method will return a integer which represents the duration in seconds.
 - `Period::merge` now accepts one or more `Period` objects to return the `Period` object which contains all submitted `Period` objects.
 
-## 1.0.1 - 2014-10-08
+## [1.0.1] - 2014-10-08
 
 ### Fixed
+
 - The `$interval` parameter can also an integer which represents the interval expressed in seconds.
 
-## 1.0 - 2014-09-24
+## [1.0.0] - 2014-09-24
 
 First stable release of `Period`
+
+## [0.3.0] - 2014-09-22
+
+- Added methods overlaps and merge
+- namespace simplification
+
+## [0.2.1] - 2014-09-22
+
+- bug fixes
+
+## [0.2.0] - 2014-09-22
+
+Class name changed from `ReportingPeriod` to `Period`
+
+- added the following methods `contains`, `getRange`, `setDuration` and `getDuration`
+- name consistency applied by removing the (Date reference)
+
+you can feed:
+- a `DateTime` or a string when a `DateTime` is expected
+- a `DateInterval` or a string when a `DateInterval` is expected
+
+## 0.1.0 - 2014-09-19
+
+[Next]: https://github.com/thephpleague/period/compare/5.2.1...master
+[5.2.1]: https://github.com/thephpleague/period/compare/5.2.0...5.2.1
+[5.2.0]: https://github.com/thephpleague/period/compare/5.1.0...5.2.0
+[5.1.0]: https://github.com/thephpleague/period/compare/5.0.0...5.1.0
+[5.1.0]: https://github.com/thephpleague/period/compare/5.0.0...5.1.0
+[5.0.0]: https://github.com/thephpleague/period/compare/4.12.0...5.0.0
+[4.12.0]: https://github.com/thephpleague/period/compare/4.11.0...4.12.0
+[4.11.0]: https://github.com/thephpleague/period/compare/4.10.0...4.11.0
+[4.10.0]: https://github.com/thephpleague/period/compare/4.9.0...4.10.0
+[4.9.0]: https://github.com/thephpleague/period/compare/4.8.1...4.9.0
+[4.8.1]: https://github.com/thephpleague/period/compare/4.8.0...4.8.1
+[4.8.0]: https://github.com/thephpleague/period/compare/4.7.1...4.8.0
+[4.7.1]: https://github.com/thephpleague/period/compare/4.7.0...4.7.1
+[4.7.0]: https://github.com/thephpleague/period/compare/4.6.0...4.7.0
+[4.6.0]: https://github.com/thephpleague/period/compare/4.5.0...4.6.0
+[4.5.0]: https://github.com/thephpleague/period/compare/4.4.0...4.5.0
+[4.4.0]: https://github.com/thephpleague/period/compare/4.3.1...4.4.0
+[4.3.1]: https://github.com/thephpleague/period/compare/4.3.0...4.3.1
+[4.3.0]: https://github.com/thephpleague/period/compare/4.2.0...4.3.0
+[4.2.0]: https://github.com/thephpleague/period/compare/4.1.0...4.2.0
+[4.1.0]: https://github.com/thephpleague/period/compare/4.0.1...4.1.0
+[4.0.1]: https://github.com/thephpleague/period/compare/4.0.0...4.0.1
+[4.0.0]: https://github.com/thephpleague/period/compare/3.4.0...4.0.0
+[3.4.0]: https://github.com/thephpleague/period/compare/3.3.0...3.4.0
+[3.3.0]: https://github.com/thephpleague/period/compare/3.2.0...3.3.0
+[3.2.0]: https://github.com/thephpleague/period/compare/3.1.1...3.2.0
+[3.1.1]: https://github.com/thephpleague/period/compare/3.1.0...3.1.1
+[3.1.0]: https://github.com/thephpleague/period/compare/3.0.1...3.1.0
+[3.0.1]: https://github.com/thephpleague/period/compare/3.0.0...3.0.1
+[3.0.0]: https://github.com/thephpleague/period/compare/2.5.1...3.0.0
+[2.5.1]: https://github.com/thephpleague/period/compare/2.5.0...2.5.1
+[2.5.0]: https://github.com/thephpleague/period/compare/2.4.0...2.5.0
+[2.4.0]: https://github.com/thephpleague/period/compare/2.3.0...2.4.0
+[2.3.0]: https://github.com/thephpleague/period/compare/2.2.0...2.3.0
+[2.2.0]: https://github.com/thephpleague/period/compare/2.1.0...2.2.0
+[2.1.0]: https://github.com/thephpleague/period/compare/2.0.0...2.1.0
+[2.0.0]: https://github.com/thephpleague/period/compare/1.0.1...2.0.0
+[1.0.1]: https://github.com/thephpleague/period/compare/1.0.0...1.0.1
+[1.0.0]: https://github.com/thephpleague/period/compare/0.3.0...1.0.0
+[0.3.0]: https://github.com/thephpleague/period/compare/0.2.1...0.3.0
+[0.2.1]: https://github.com/thephpleague/period/compare/0.2.0...0.2.1
+[0.2.0]: https://github.com/thephpleague/period/compare/0.1.0...0.2.0

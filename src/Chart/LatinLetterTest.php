@@ -13,23 +13,39 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversDefaultClass \League\Period\Chart\LatinLetter;
- */
 final class LatinLetterTest extends TestCase
 {
+    public function testFailsToCreateNewInstanceWithEmptyString(): void
+    {
+        $this->expectException(UnableToDrawChart::class);
+
+        new LatinLetter('');
+    }
+
+    public function testFailsToCreateNewInstanceWithInvalidString(): void
+    {
+        $this->expectException(UnableToDrawChart::class);
+
+        new LatinLetter('F0obar');
+    }
+
     /**
-     * @dataProvider providerLetter
+     * @param array<string> $expected
      */
+    #[DataProvider('providerLetter')]
     public function testGetLabels(int $nbLabels, string $letter, array $expected): void
     {
         $generator = new LatinLetter($letter);
         self::assertSame($expected, iterator_to_array($generator->generate($nbLabels), false));
     }
 
-    public function providerLetter(): iterable
+    /**
+     * @return iterable<string, array{nbLabels:int, letter:string, expected:array<string>}>
+     */
+    public static function providerLetter(): iterable
     {
         return [
             'empty labels' => [
@@ -47,37 +63,27 @@ final class LatinLetterTest extends TestCase
                 'letter' => 'aa',
                 'expected' => ['aa', 'ab'],
             ],
+            'labels starts ends at z' => [
+                'nbLabels' => 3,
+                'letter' => 'z',
+                'expected' => ['z', 'aa', 'ab'],
+            ],
             'labels starts at 0 (1)' => [
                 'nbLabels' => 1,
-                'letter' => '        ',
-                'expected' => ['0'],
+                'letter' => '   A     ',
+                'expected' => ['A'],
             ],
             'labels starts at 0 (2)' => [
                 'nbLabels' => 1,
-                'letter' => '',
-                'expected' => ['0'],
-            ],
-            'labels with an integer' => [
-                'nbLabels' => 1,
-                'letter' => '1',
+                'letter' => 'A',
                 'expected' => ['A'],
             ],
         ];
     }
 
-    public function testStartWith(): void
-    {
-        $generator = new \League\Period\Chart\LatinLetter('i');
-        self::assertSame('i', $generator->startingAt());
-        $new = $generator->startsWith('o');
-        self::assertNotSame($new, $generator);
-        self::assertSame('o', $new->startingAt());
-        self::assertSame($generator, $generator->startsWith('i'));
-    }
-
     public function testFormat(): void
     {
-        $generator = new \League\Period\Chart\LatinLetter('i');
+        $generator = new LatinLetter('i');
         self::assertSame('foobar', $generator->format('foobar'));
     }
 }

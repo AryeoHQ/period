@@ -15,6 +15,7 @@ namespace League\Period\Chart;
 
 use League\Period\Period;
 use League\Period\Sequence;
+
 use function array_fill;
 use function array_splice;
 use function ceil;
@@ -25,33 +26,18 @@ use function str_pad;
 use function str_repeat;
 
 /**
- * A class to output a Dataset via a Gantt Bar graph.
+ * A class to output a Dataset via a Gantt Bar Graph.
  */
 final class GanttChart implements Chart
 {
-    /**
-     * @var GanttChartConfig
-     */
-    private $config;
+    private float $start = 0;
+    private float $unit = 1;
+    /** @var array<string>  */
+    private array $emptyLineCharacters;
 
-    /**
-     * @var float
-     */
-    private $start;
-
-    /**
-     * @var float
-     */
-    private $unit;
-
-    /**
-     * New instance.
-     *
-     * @param ?GanttChartConfig $config
-     */
-    public function __construct(?GanttChartConfig $config = null)
-    {
-        $this->config = $config ?? new GanttChartConfig();
+    public function __construct(
+        public readonly GanttChartConfig $config = new GanttChartConfig()
+    ) {
     }
 
     /**
@@ -68,19 +54,22 @@ final class GanttChart implements Chart
     public function stroke(Data $dataset): void
     {
         $this->setChartScale($dataset);
-        $padding = $this->config->labelAlign();
-        $gap = str_repeat(' ', $this->config->gapSize());
-        $leftMargin = str_repeat(' ', $this->config->leftMarginSize());
-        $lineCharacters = array_fill(0, $this->config->width(), $this->config->space());
+        $padding = $this->config->labelAlignment->toPadding();
+        $gap = str_repeat(' ', $this->config->gapSize);
+        $leftMargin = str_repeat(' ', $this->config->leftMarginSize);
         $labelMaxLength = $dataset->labelMaxLength();
-        $colorCodeIndexes = $this->config->colors();
+        $colorCodeIndexes = $this->config->colors;
         $colorCodeCount = count($colorCodeIndexes);
-        $output = $this->config->output();
-        foreach ($dataset as $offset => [$label, $item]) {
-            $colorIndex = $colorCodeIndexes[$offset % $colorCodeCount];
-            $labelPortion = str_pad($label, $labelMaxLength, ' ', $padding);
-            $dataPortion = $this->drawDataPortion($item, $lineCharacters);
-            $output->writeln($leftMargin.$labelPortion.$gap.$dataPortion, $colorIndex);
+        $output = $this->config->output;
+        $this->emptyLineCharacters = array_fill(0, $this->config->width, $this->config->spaceCharacter);
+        foreach ($dataset as $offset => [$label, $sequence]) {
+            $output->writeln(
+                $leftMargin
+                .str_pad((string) $label, $labelMaxLength, ' ', $padding)
+                .$gap
+                .$this->sequenceToLine($sequence),
+                $colorCodeIndexes[$offset % $colorCodeCount]
+            );
         }
     }
 
@@ -91,32 +80,38 @@ final class GanttChart implements Chart
     {
         $this->start = 0;
         $this->unit = 1;
-        $boundaries = $dataset->boundaries();
-        if (null !== $boundaries) {
-            $this->start = $boundaries->getStartDate()->getTimestamp();
-            $this->unit = $this->config->width() / $boundaries->getTimestampInterval();
+        $length = $dataset->length();
+        if (null !== $length) {
+            $this->start = $length->startDate->getTimestamp();
+            $this->unit = $this->config->width / $length->timeDuration();
         }
     }
 
     /**
-     * Convert a Dataset item into a graph data portion.
+     * Convert a Dataset item into a graph line.
      *
-     * @param string[] $lineCharacters
+     * The empty line get filled by characters to create something like this  [--------)
      */
-    private function drawDataPortion(Sequence $item, array $lineCharacters): string
+    private function sequenceToLine(Sequence $item): string
     {
-        $reducer = function (array $lineCharacters, Period $period): array {
-            $startIndex = (int) floor(($period->getStartDate()->getTimestamp() - $this->start) * $this->unit);
-            $endIndex = (int) ceil(($period->getEndDate()->getTimestamp() - $this->start) * $this->unit);
-            $periodLength = $endIndex - $startIndex;
+        return implode('', $item->reduce($this->periodToCharacters(...), $this->emptyLineCharacters));
+    }
 
-            array_splice($lineCharacters, $startIndex, $periodLength, array_fill(0, $periodLength, $this->config->body()));
-            $lineCharacters[$startIndex] = $period->isStartIncluded() ? $this->config->startIncluded() : $this->config->startExcluded();
-            $lineCharacters[$endIndex - 1] = $period->isEndIncluded() ? $this->config->endIncluded() : $this->config->endExcluded();
+    /**
+     * @param array<string> $characters
+     *
+     * @return array<string>
+     */
+    private function periodToCharacters(array $characters, Period $period): array
+    {
+        $startIndex = (int) floor(($period->startDate->getTimestamp() - $this->start) * $this->unit);
+        $endIndex = (int) ceil(($period->endDate->getTimestamp() - $this->start) * $this->unit);
+        $periodLength = $endIndex - $startIndex;
 
-            return $lineCharacters;
-        };
+        array_splice($characters, $startIndex, $periodLength, array_fill(0, $periodLength, $this->config->bodyCharacter));
+        $characters[$startIndex] = $period->bounds->isStartIncluded() ? $this->config->startIncludedCharacter : $this->config->startExcludedCharacter;
+        $characters[$endIndex - 1] = $period->bounds->isEndIncluded() ? $this->config->endIncludedCharacter : $this->config->endExcludedCharacter;
 
-        return implode('', $item->reduce($reducer, $lineCharacters));
+        return $characters;
     }
 }

@@ -13,36 +13,28 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use Iterator;
+use IteratorAggregate;
 use League\Period\Period;
 use League\Period\Sequence;
+use MultipleIterator;
+use TypeError;
+
 use function array_column;
 use function count;
-use function gettype;
-use function is_scalar;
-use function method_exists;
 use function strlen;
 
 final class Dataset implements Data
 {
-    /**
-     * @var array<int, array{0:string, 1:Sequence}>.
-     */
-    private $pairs = [];
+    /** @var array<array{0:int|string, 1:Sequence}> */
+    private array $pairs = [];
+    private int $labelMaxLength = 0;
+    private Period|null $length = null;
 
     /**
-     * @var int
+     * @param array<array{0:string|int, 1:Period|Sequence}>|Iterator<array{0:string|int, 1:Period|Sequence}>|IteratorAggregate<array{0:string|int, 1:Period|Sequence}> $pairs
      */
-    private $labelMaxLength = 0;
-
-    /**
-     * @var Period|null
-     */
-    private $boundaries;
-
-    /**
-     * constructor.
-     */
-    public function __construct(iterable $pairs = [])
+    public function __construct(array|Iterator|IteratorAggregate $pairs = [])
     {
         $this->appendAll($pairs);
     }
@@ -50,29 +42,29 @@ final class Dataset implements Data
     /**
      * Creates a new collection from a countable iterable structure.
      *
-     * @param array|(\Countable&iterable) $items
-     * @param ?LabelGenerator             $labelGenerator
+     * @param iterable<array-key, Period|Sequence> $items
      */
-    public static function fromItems($items, ?LabelGenerator $labelGenerator = null): self
+    public static function fromItems(iterable $items, LabelGenerator $labelGenerator = new LatinLetter('A')): self
     {
-        $nbItems = count($items);
-        $items = (function () use ($items): \Iterator {
+        if (!is_countable($items)) {
+            throw new TypeError('The submitted items collection should be countable.');
+        }
+
+        $pairs = new MultipleIterator(MultipleIterator::MIT_NEED_ALL | MultipleIterator::MIT_KEYS_ASSOC);
+        $pairs->attachIterator($labelGenerator->generate(count($items)), 0);
+        $pairs->attachIterator((function () use ($items): Iterator {
             foreach ($items as $key => $value) {
                 yield $key => $value;
             }
-        })();
-
-        $labelGenerator = $labelGenerator ?? new LatinLetter();
-
-        $pairs = new \MultipleIterator(\MultipleIterator::MIT_NEED_ALL|\MultipleIterator::MIT_KEYS_ASSOC);
-        $pairs->attachIterator($labelGenerator->generate($nbItems), '0');
-        $pairs->attachIterator($items, '1');
+        })(), 1);
 
         return new self($pairs);
     }
 
     /**
      * Creates a new collection from a generic iterable structure.
+     *
+     * @param iterable<string|int, Period|Sequence> $iterable
      */
     public static function fromIterable(iterable $iterable): self
     {
@@ -85,37 +77,29 @@ final class Dataset implements Data
     }
 
     /**
-     * {@inheritDoc}
+     * @param iterable<array{0:string|int, 1:Period|Sequence}> $pairs
      */
-    public function appendAll(iterable $pairs): void
+    public function appendAll(iterable $pairs): self
     {
         foreach ($pairs as [$label, $item]) {
             $this->append($label, $item);
         }
+
+        return $this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function append($label, $item): void
+    public function append(string|int $label, Period|Sequence $item): self
     {
-        if (!is_scalar($label) && !method_exists($label, '__toString')) {
-            throw new \TypeError('The label passed to '.__METHOD__.' must be a scalar or an stringable object, '.gettype($label).' given.');
-        }
-
         if ($item instanceof Period) {
             $item = new Sequence($item);
         }
 
-        if (!$item instanceof Sequence) {
-            throw new \TypeError('The item passed to '.__METHOD__.' must be a '.Period::class.' or a '.Sequence::class.' instance, '.gettype($item).' given.');
-        }
-
-        $label = (string) $label;
-        $this->setLabelMaxLength($label);
-        $this->setBoundaries($item);
+        $this->setLabelMaxLength((string) $label);
+        $this->setLength($item);
 
         $this->pairs[] = [$label, $item];
+
+        return $this;
     }
 
     /**
@@ -132,29 +116,23 @@ final class Dataset implements Data
     /**
      * Computes the Period boundary for the dataset.
      */
-    private function setBoundaries(Sequence $sequence): void
+    private function setLength(Sequence $sequence): void
     {
-        if (null === $this->boundaries) {
-            $this->boundaries = $sequence->boundaries();
+        if (null === $this->length) {
+            $this->length = $sequence->length();
 
             return;
         }
 
-        $this->boundaries = $this->boundaries->merge(...$sequence);
+        $this->length = $this->length->merge(...$sequence);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function count(): int
     {
         return count($this->pairs);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getIterator(): \Iterator
+    public function getIterator(): Iterator
     {
         foreach ($this->pairs as $pair) {
             yield $pair;
@@ -162,52 +140,36 @@ final class Dataset implements Data
     }
 
     /**
-     * {@inheritDoc}
+     * @return array<array{label:string|int, item:Sequence}>
      */
     public function jsonSerialize(): array
     {
-        $mapper = static function (array $pair): array {
-            return ['label' => $pair[0], 'item' => $pair[1]];
-        };
-
-        return array_map($mapper, $this->pairs);
+        return array_map(
+            fn (array $pair): array => ['label' => $pair[0], 'item' => $pair[1]],
+            $this->pairs
+        );
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function isEmpty(): bool
     {
         return [] === $this->pairs;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function labels(): array
     {
         return array_column($this->pairs, 0);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function items(): array
     {
         return array_column($this->pairs, 1);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function boundaries(): ?Period
+    public function length(): Period|null
     {
-        return $this->boundaries;
+        return $this->length;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function labelMaxLength(): int
     {
         return $this->labelMaxLength;

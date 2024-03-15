@@ -13,23 +13,25 @@ declare(strict_types=1);
 
 namespace League\Period\Chart;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversDefaultClass \League\Period\Chart\DecimalNumber;
- */
 final class DecimalNumberTest extends TestCase
 {
     /**
-     * @dataProvider providerLetter
+     * @param array<string> $expected
      */
+    #[DataProvider('providerLetter')]
     public function testGetLabels(int $nbLabels, int $label, array $expected): void
     {
-        $generator = new \League\Period\Chart\DecimalNumber($label);
+        $generator = new DecimalNumber($label);
         self::assertSame($expected, iterator_to_array($generator->generate($nbLabels), false));
     }
 
-    public function providerLetter(): iterable
+    /**
+     * @return iterable<string, array{nbLabels:int, label:int, expected:array<string>}>
+     */
+    public static function providerLetter(): iterable
     {
         return [
             'empty labels' => [
@@ -50,31 +52,19 @@ final class DecimalNumberTest extends TestCase
             'labels starts at 0 (1)' => [
                 'nbLabels' => 1,
                 'label' => -1,
-                'expected' => ['1'],
+                'expected' => ['-1'],
             ],
             'labels starts at 0 (2)' => [
                 'nbLabels' => 1,
                 'label' => 0,
-                'expected' => ['1'],
+                'expected' => ['0'],
             ],
         ];
     }
 
-    public function testStartWith(): void
-    {
-        $generator = new \League\Period\Chart\DecimalNumber(42);
-        self::assertSame(42, $generator->startingAt());
-        $new = $generator->startsWith(69);
-        self::assertNotSame($new, $generator);
-        self::assertSame(69, $new->startingAt());
-        self::assertSame($generator, $generator->startsWith(42));
-        self::assertSame(1, (new \League\Period\Chart\DecimalNumber(-3))->startingAt());
-        self::assertSame(1, $generator->startsWith(-3)->startingAt());
-    }
-
     public function testFormat(): void
     {
-        $generator = new \League\Period\Chart\DecimalNumber(42);
+        $generator = new DecimalNumber(42);
         self::assertSame('', $generator->format(''));
     }
 }

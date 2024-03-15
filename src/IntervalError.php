@@ -13,13 +13,8 @@ declare(strict_types=1);
 
 namespace League\Period;
 
-/**
- * Exception thrown by the Sequence class.
- *
- * @package League.period
- * @author  Ignace Nyamagana Butera <nyamsprod@gmail.com>
- * @since   4.1.0
- */
-class InvalidIndex extends Exception
+use Throwable;
+
+interface IntervalError extends Throwable
 {
 }
