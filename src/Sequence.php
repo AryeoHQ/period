@@ -556,10 +556,14 @@ class Sequence implements ArrayAccess, Countable, IteratorAggregate, JsonSeriali
             $intervals[$offset] = $closure($period, $offset);
         }
 
-        return match ($this->periods) {
-            $intervals => $this,
-            default => new self(...$intervals),
-        };
+        if ($intervals === $this->periods) {
+            return $this;
+        }
+
+        $mapped = new self();
+        $mapped->periods = $intervals;
+
+        return $mapped;
     }
 
     /**
