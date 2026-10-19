@@ -1,0 +1,78 @@
+# Tests aryeo/period and publishes it to the Artifactory Composer repository.
+#
+# aryeo/period is AryeoHQ's fork of league/period 5.3.1, which removes final from Period and
+# Sequence so they can be extended. Releases come from the php8.3 branch.
+#
+# Branches run validation, the unit tests at lowest and stable dependencies, static analysis
+# and the coding style check. A semver tag push (e.g. 1.0.0) runs the same checks, then
+# packages the tagged source and publishes it.
+#
+# The job scripts come from the shared template.
+include:
+  - project: vendor-platform/ci_cd/gitlab-ci-templates
+    ref: main
+    file: php-composer-package.yml
+
+stages:
+  - test
+  - package
+  - publish
+
+default:
+  tags:
+    - build
+  interruptible: true
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+validate:
+  stage: test
+  extends: .php-composer
+  script:
+    - composer validate --strict
+
+tests:
+  stage: test
+  extends: .php-tests
+  variables:
+    # The CI image has no coverage driver; phpunit.xml requests coverage, which PHPUnit
+    # otherwise reports as a warning that fails the run.
+    TEST_COMMAND: vendor/bin/phpunit --no-coverage
+  parallel:
+    matrix:
+      - COMPOSER_UPDATE_FLAGS:
+          - --prefer-lowest
+          - --prefer-stable
+
+static-analysis:
+  stage: test
+  extends: .php-composer
+  script:
+    - composer phpstan
+
+# composer phpcs checks without changing files. GitHub ran phpcs:fix, which never fails.
+code-style:
+  stage: test
+  extends: .php-composer
+  script:
+    - composer phpcs
+
+package:
+  stage: package
+  extends: .package
+  needs: [validate, tests, static-analysis, code-style]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/
+
+publish:
+  stage: publish
+  extends: .publish
+  needs: [package]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/
